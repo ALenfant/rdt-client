@@ -1,7 +1,7 @@
 import { Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { Torrent } from '../models/torrent.model';
+import { DownloadType, Torrent } from '../models/torrent.model';
 import { DiskSpaceStatus } from '../models/disk-space-status.model';
 import { RateLimitStatus } from '../models/rate-limit-status.model';
 import { TorrentService } from '../torrent.service';
@@ -59,6 +59,8 @@ export class TorrentTableComponent implements OnInit, OnDestroy {
 
   public diskSpaceStatus: DiskSpaceStatus | null = null;
   public rateLimitStatus: RateLimitStatus | null = null;
+
+  public DownloadType = DownloadType;
 
   public isMobile = false;
   private mobileQuery: MediaQueryList;

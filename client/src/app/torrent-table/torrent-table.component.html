@@ -54,7 +54,7 @@
             </td>
             <td (click)="openTorrent(torrent.torrentId)" class="break-all">
               <span class="icon is-small mr-2">
-                @if (torrent.type === 0) {
+                @if (torrent.type === DownloadType.Torrent) {
                   <i class="fas fa-magnet" aria-hidden="true"></i>
                 } @else {
                   <i class="fas fa-file-archive" aria-hidden="true"></i>
@@ -104,7 +104,7 @@
           <div class="mobile-card-body" (click)="openTorrent(torrent.torrentId)">
             <p class="mobile-card-name">
               <span class="icon is-small mr-2">
-                @if (torrent.type === 0) {
+                @if (torrent.type === DownloadType.Torrent) {
                   <i class="fas fa-magnet" aria-hidden="true"></i>
                 } @else {
                   <i class="fas fa-file-archive" aria-hidden="true"></i>
