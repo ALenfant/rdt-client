@@ -53,6 +53,13 @@
               <input type="checkbox" (click)="toggleSelect(torrent.torrentId)" [checked]="isSelected(torrent.torrentId)" />
             </td>
             <td (click)="openTorrent(torrent.torrentId)" class="break-all">
+              <span class="icon is-small mr-2">
+                @if (torrent.type === DownloadType.Torrent) {
+                  <i class="fas fa-magnet" aria-hidden="true"></i>
+                } @else {
+                  <i class="fas fa-file-archive" aria-hidden="true"></i>
+                }
+              </span>
               {{ torrent.rdName }}
             </td>
             <td>
@@ -95,7 +102,16 @@
             />
           </div>
           <div class="mobile-card-body" (click)="openTorrent(torrent.torrentId)">
-            <p class="mobile-card-name">{{ torrent.rdName }}</p>
+            <p class="mobile-card-name">
+              <span class="icon is-small mr-2">
+                @if (torrent.type === DownloadType.Torrent) {
+                  <i class="fas fa-magnet" aria-hidden="true"></i>
+                } @else {
+                  <i class="fas fa-file-archive" aria-hidden="true"></i>
+                }
+              </span>
+              {{ torrent.rdName }}
+            </p>
             <div class="tags mb-2">
               <span class="tag is-info is-light">{{ torrent.statusText ?? (torrent | status) }}</span>
               @if (torrent.category) {
