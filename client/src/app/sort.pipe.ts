@@ -7,13 +7,22 @@ export function getSortFieldValue(item: unknown, field: string): unknown {
     return undefined;
   }
 
-  return field.split('.').reduce<unknown>((value, key) => {
+  // Fast-path for non-nested fields
+  if (!field.includes('.')) {
+    return (item as Record<string, unknown>)[field];
+  }
+
+  const keys = field.split('.');
+  let value = item;
+
+  for (const key of keys) {
     if (value == null || typeof value !== 'object') {
       return undefined;
     }
+    value = (value as Record<string, unknown>)[key];
+  }
 
-    return (value as Record<string, unknown>)[key];
-  }, item);
+  return value;
 }
 
 function compareSortValues(left: unknown, right: unknown): number {
@@ -67,7 +76,11 @@ export function sortItems<T>(
 
   const direction = order === 'asc' ? 1 : -1;
 
-  return [...array].sort((left, right) => compareSortValues(accessor(left, field), accessor(right, field)) * direction);
+  // Utilize Schwartzian transform for O(N) accessor evaluation rather than O(N log N)
+  return array
+    .map((item) => ({ item, value: accessor(item, field) }))
+    .sort((left, right) => compareSortValues(left.value, right.value) * direction)
+    .map((wrapper) => wrapper.item);
 }
 
 @Pipe({ name: 'sort' })
