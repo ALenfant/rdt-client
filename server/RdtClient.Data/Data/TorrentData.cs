@@ -9,16 +9,14 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
 {
     public async Task<IList<Torrent>> Get()
     {
-        var torrents = await dataContext.Torrents
-                                         .AsNoTracking()
-                                         .AsSplitQuery()
-                                         .Include(m => m.Downloads)
-                                         .OrderBy(m => m.Priority ?? 9999)
-                                         .ToListAsync();
-
-        return torrents.OrderBy(m => m.Priority ?? 9999)
-                       .ThenBy(m => m.Added)
-                       .ToList();
+        // ⚡ Bolt: Offloaded sorting to the database to reduce memory usage and CPU overhead from in-memory sorting.
+        return await dataContext.Torrents
+                                 .AsNoTracking()
+                                 .AsSplitQuery()
+                                 .Include(m => m.Downloads)
+                                 .OrderBy(m => m.Priority ?? 9999)
+                                 .ThenBy(m => m.Added)
+                                 .ToListAsync();
     }
 
     public async Task<Torrent?> GetById(Guid torrentId)
