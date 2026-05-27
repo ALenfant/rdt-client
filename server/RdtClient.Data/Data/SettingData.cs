@@ -38,16 +38,9 @@ public class SettingData(DataContext dataContext, ILogger<SettingData> logger)
 
     public async Task Update(String settingId, Object? value)
     {
-        var dbSetting = await dataContext.Settings.FirstOrDefaultAsync(m => m.SettingId == settingId);
-
-        if (dbSetting == null)
-        {
-            return;
-        }
-
-        dbSetting.Value = value?.ToString();
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Settings
+                         .Where(m => m.SettingId == settingId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(m => m.Value, value != null ? value.ToString() : null));
 
         await ResetCache();
     }
