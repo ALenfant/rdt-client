@@ -1,0 +1,3 @@
+## 2025-02-15 - ExecuteUpdateAsync and ExecuteDeleteAsync in Entity Framework Core
+**Learning:** In Entity Framework Core 7+, using ExecuteUpdateAsync() and ExecuteDeleteAsync() bypasses the change tracker entirely and directly translates to a single UPDATE or DELETE SQL statement. This dramatically reduces memory overhead and improves performance when modifying or deleting single database entities compared to the traditional FirstOrDefaultAsync() followed by property updates and SaveChangesAsync().
+**Action:** Always use ExecuteUpdateAsync and ExecuteDeleteAsync for single-record or bulk updates/deletes in EF Core codebases to optimize performance, skipping the memory allocation and tracking overhead completely.
