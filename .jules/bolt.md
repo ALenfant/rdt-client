@@ -1,0 +1,3 @@
+## 2024-05-30 - Optimize EF Core Updates/Deletes in Data Repositories
+**Learning:** Found widespread performance bottleneck in `RdtClient.Data` where single property updates and deletes required fetching entities first with `FirstOrDefaultAsync()` followed by modifying properties and calling `SaveChangesAsync()`.
+**Action:** Replaced these read-then-modify operations with EF Core 7.0+ `ExecuteUpdateAsync` and `ExecuteDeleteAsync`. This avoids database read overhead and tracks changes natively inside the SQL query, offering a tremendous boost for large-scale or frequently invoked updates on torrent/download metadata.
