@@ -133,30 +133,18 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
 
     public async Task UpdateRdId(Torrent torrent, String rdId)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrent.TorrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.RdId = rdId;
-
-        await dataContext.SaveChangesAsync();
+        // Optimization: Use ExecuteUpdateAsync/ExecuteDeleteAsync to perform a direct SQL operation without tracking overhead.
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrent.TorrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.RdId, rdId));
     }
 
     public async Task UpdateHash(Torrent torrent, String hash)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrent.TorrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Hash = hash.ToLower();
-
-        await dataContext.SaveChangesAsync();
+        // Optimization: Use ExecuteUpdateAsync/ExecuteDeleteAsync to perform a direct SQL operation without tracking overhead.
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrent.TorrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Hash, hash.ToLower()));
     }
 
     public async Task Update(Torrent torrent)
@@ -182,16 +170,10 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
 
     public async Task UpdateCategory(Guid torrentId, String? category)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Category = category;
-
-        await dataContext.SaveChangesAsync();
+        // Optimization: Use ExecuteUpdateAsync/ExecuteDeleteAsync to perform a direct SQL operation without tracking overhead.
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Category, category));
     }
 
     public async Task UpdateComplete(Guid torrentId, String? error, DateTimeOffset? datetime, Boolean retry)
@@ -231,65 +213,42 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
 
     public async Task UpdateFilesSelected(Guid torrentId, DateTimeOffset datetime)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.FilesSelected = datetime;
-
-        await dataContext.SaveChangesAsync();
+        // Optimization: Use ExecuteUpdateAsync/ExecuteDeleteAsync to perform a direct SQL operation without tracking overhead.
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.FilesSelected, datetime));
     }
 
     public async Task UpdatePriority(Guid torrentId, Int32? priority)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Priority = priority;
-
-        await dataContext.SaveChangesAsync();
+        // Optimization: Use ExecuteUpdateAsync/ExecuteDeleteAsync to perform a direct SQL operation without tracking overhead.
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Priority, priority));
     }
 
     public async Task UpdateRetry(Guid torrentId, DateTimeOffset? dateTime, Int32 retryCount)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.RetryCount = retryCount;
-        dbTorrent.Retry = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        // Optimization: Use ExecuteUpdateAsync/ExecuteDeleteAsync to perform a direct SQL operation without tracking overhead.
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.RetryCount, retryCount)
+                                                   .SetProperty(b => b.Retry, dateTime));
     }
 
     public async Task UpdateError(Guid torrentId, String error)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Error = error;
-
-        await dataContext.SaveChangesAsync();
+        // Optimization: Use ExecuteUpdateAsync/ExecuteDeleteAsync to perform a direct SQL operation without tracking overhead.
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Error, error));
     }
 
     public async Task Delete(Guid torrentId)
     {
         await using var transaction = await dataContext.Database.BeginTransactionAsync();
 
+        // Optimization: Use ExecuteUpdateAsync/ExecuteDeleteAsync to perform a direct SQL operation without tracking overhead.
         await dataContext.Downloads
                          .Where(m => m.TorrentId == torrentId)
                          .ExecuteDeleteAsync();
