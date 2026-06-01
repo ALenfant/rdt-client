@@ -1,0 +1,3 @@
+## 2024-05-19 - [EF Core Performance - Avoiding Tracking Overhead]
+**Learning:** Frequent single-property updates or bulk deletions on entities using EF Core can suffer from significant tracking overhead if entities are fetched first (e.g., using `FirstOrDefaultAsync` or `ToListAsync`) only to set one property and call `SaveChangesAsync`, or to pass to `RemoveRange`.
+**Action:** When performing simple, single-property updates or targeted deletions by ID in EF Core, use `ExecuteUpdateAsync(s => s.SetProperty(...))` and `ExecuteDeleteAsync()` directly on the DbSet query. This translates to direct SQL `UPDATE` or `DELETE` statements without loading or tracking the entities, saving memory and processing time.

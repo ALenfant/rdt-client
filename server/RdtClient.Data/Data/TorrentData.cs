@@ -180,18 +180,12 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
         await dataContext.SaveChangesAsync();
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateCategory(Guid torrentId, String? category)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Category = category;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Category, category));
     }
 
     public async Task UpdateComplete(Guid torrentId, String? error, DateTimeOffset? datetime, Boolean retry)
@@ -229,32 +223,20 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
         await dataContext.SaveChangesAsync();
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateFilesSelected(Guid torrentId, DateTimeOffset datetime)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.FilesSelected = datetime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.FilesSelected, datetime));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdatePriority(Guid torrentId, Int32? priority)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Priority = priority;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Priority, priority));
     }
 
     public async Task UpdateRetry(Guid torrentId, DateTimeOffset? dateTime, Int32 retryCount)
@@ -272,18 +254,12 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
         await dataContext.SaveChangesAsync();
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateError(Guid torrentId, String error)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Error = error;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Error, error));
     }
 
     public async Task Delete(Guid torrentId)

@@ -97,180 +97,100 @@ public class DownloadData(DataContext dataContext, ILogger<DownloadData>? logger
         }
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateUnrestrictedLink(Guid downloadId, String unrestrictedLink)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.Link = unrestrictedLink;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Link, unrestrictedLink));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateFileName(Guid downloadId, String fileName)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.FileName = fileName;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.FileName, fileName));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateDownloadStarted(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.DownloadStarted = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.DownloadStarted, dateTime));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateDownloadFinished(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.DownloadFinished = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.DownloadFinished, dateTime));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateUnpackingQueued(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.UnpackingQueued = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.UnpackingQueued, dateTime));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateUnpackingStarted(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.UnpackingStarted = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.UnpackingStarted, dateTime));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateUnpackingFinished(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.UnpackingFinished = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.UnpackingFinished, dateTime));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateCompleted(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.Completed = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Completed, dateTime));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateError(Guid downloadId, String? error)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.Error = error;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Error, error));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateRetryCount(Guid downloadId, Int32 retryCount)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.RetryCount = retryCount;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.RetryCount, retryCount));
     }
 
+    // ⚡ Bolt: Using ExecuteUpdateAsync to avoid entity tracking overhead for single-property update
     public async Task UpdateRemoteId(Guid downloadId, String remoteId)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.RemoteId = remoteId;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.RemoteId, remoteId));
     }
 
+    // ⚡ Bolt: Using ExecuteDeleteAsync to avoid fetching entities before deletion
     public async Task DeleteForTorrent(Guid torrentId)
     {
-        var downloads = await dataContext.Downloads
-                                         .Where(m => m.TorrentId == torrentId)
-                                         .ToListAsync();
-
-        dataContext.Downloads.RemoveRange(downloads);
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteDeleteAsync();
     }
 
     public async Task Reset(Guid downloadId)
