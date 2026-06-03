@@ -1,0 +1,3 @@
+## 2024-05-24 - Entity Framework Core Database Optimization
+**Learning:** The traditional pattern of `.FirstOrDefaultAsync()` followed by property assignment and `.SaveChangesAsync()` is a widespread anti-pattern for single-property updates and single-table bulk deletes because it causes unnecessary database read queries, loads entities into memory, and incurs change-tracking overhead.
+**Action:** Use EF Core 7.0+ bulk update methods `.ExecuteUpdateAsync()` and `.ExecuteDeleteAsync()` instead for massive performance gains, which translate directly into zero-allocation SQL `UPDATE` and `DELETE` commands. When using `.SetProperty()` with null assignments, explicit casting (e.g., `(String?)null`) is required to appease the C# compiler's type inference.
