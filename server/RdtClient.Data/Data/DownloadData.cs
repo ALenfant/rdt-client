@@ -99,178 +99,87 @@ public class DownloadData(DataContext dataContext, ILogger<DownloadData>? logger
 
     public async Task UpdateUnrestrictedLink(Guid downloadId, String unrestrictedLink)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.Link = unrestrictedLink;
-
-        await dataContext.SaveChangesAsync();
+        // Performance optimization: using ExecuteUpdateAsync avoids EF tracking overhead and multiple database roundtrips
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.Link, unrestrictedLink));
     }
 
     public async Task UpdateFileName(Guid downloadId, String fileName)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.FileName = fileName;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.FileName, fileName));
     }
 
     public async Task UpdateDownloadStarted(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.DownloadStarted = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.DownloadStarted, dateTime));
     }
 
     public async Task UpdateDownloadFinished(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.DownloadFinished = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.DownloadFinished, dateTime));
     }
 
     public async Task UpdateUnpackingQueued(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.UnpackingQueued = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.UnpackingQueued, dateTime));
     }
 
     public async Task UpdateUnpackingStarted(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.UnpackingStarted = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.UnpackingStarted, dateTime));
     }
 
     public async Task UpdateUnpackingFinished(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.UnpackingFinished = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.UnpackingFinished, dateTime));
     }
 
     public async Task UpdateCompleted(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.Completed = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.Completed, dateTime));
     }
 
     public async Task UpdateError(Guid downloadId, String? error)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.Error = error;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.Error, error));
     }
 
     public async Task UpdateRetryCount(Guid downloadId, Int32 retryCount)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.RetryCount = retryCount;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.RetryCount, retryCount));
     }
 
     public async Task UpdateRemoteId(Guid downloadId, String remoteId)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.RemoteId = remoteId;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(d => d.RemoteId, remoteId));
     }
 
     public async Task DeleteForTorrent(Guid torrentId)
     {
-        var downloads = await dataContext.Downloads
-                                         .Where(m => m.TorrentId == torrentId)
-                                         .ToListAsync();
-
-        dataContext.Downloads.RemoveRange(downloads);
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteDeleteAsync();
     }
 
     public async Task Reset(Guid downloadId)
