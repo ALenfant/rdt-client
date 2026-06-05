@@ -1,0 +1,3 @@
+## 2024-06-05 - Entity Framework Core ExecuteUpdateAsync/ExecuteDeleteAsync optimization
+**Learning:** Found an Entity Framework performance optimization by using `ExecuteUpdateAsync` and `ExecuteDeleteAsync` directly against the database in the `.NET` backend. Previously, code was using `FirstOrDefaultAsync()` or `ToListAsync()` combined with manual property modifications / `RemoveRange` and `SaveChangesAsync()`, which pulls entire entities into memory and adds change tracking overhead.
+**Action:** Use `ExecuteUpdateAsync` (chaining `SetProperty`) and `ExecuteDeleteAsync` for updates and deletions when the whole entity doesn't strictly need to be fetched, to improve database performance and reduce memory usage overhead.
