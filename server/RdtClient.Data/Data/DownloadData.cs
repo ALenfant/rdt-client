@@ -264,34 +264,34 @@ public class DownloadData(DataContext dataContext, ILogger<DownloadData>? logger
 
     public async Task DeleteForTorrent(Guid torrentId)
     {
-        var downloads = await dataContext.Downloads
-                                         .Where(m => m.TorrentId == torrentId)
-                                         .ToListAsync();
-
-        dataContext.Downloads.RemoveRange(downloads);
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Downloads
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteDeleteAsync();
     }
 
     public async Task Reset(Guid downloadId)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId)
-                         ?? throw new($"Cannot find download with ID {downloadId}");
+        var now = DateTimeOffset.UtcNow;
 
-        dbDownload.RetryCount = 0;
-        dbDownload.Link = null;
-        dbDownload.Added = DateTimeOffset.UtcNow;
-        dbDownload.DownloadQueued = DateTimeOffset.UtcNow;
-        dbDownload.DownloadStarted = null;
-        dbDownload.DownloadFinished = null;
-        dbDownload.UnpackingQueued = null;
-        dbDownload.UnpackingStarted = null;
-        dbDownload.UnpackingFinished = null;
-        dbDownload.Completed = null;
-        dbDownload.Error = null;
+        var affectedRows = await dataContext.Downloads
+                                            .Where(m => m.DownloadId == downloadId)
+                                            .ExecuteUpdateAsync(s => s
+                                                .SetProperty(m => m.RetryCount, 0)
+                                                .SetProperty(m => m.Link, (String?)null)
+                                                .SetProperty(m => m.Added, now)
+                                                .SetProperty(m => m.DownloadQueued, now)
+                                                .SetProperty(m => m.DownloadStarted, (DateTimeOffset?)null)
+                                                .SetProperty(m => m.DownloadFinished, (DateTimeOffset?)null)
+                                                .SetProperty(m => m.UnpackingQueued, (DateTimeOffset?)null)
+                                                .SetProperty(m => m.UnpackingStarted, (DateTimeOffset?)null)
+                                                .SetProperty(m => m.UnpackingFinished, (DateTimeOffset?)null)
+                                                .SetProperty(m => m.Completed, (DateTimeOffset?)null)
+                                                .SetProperty(m => m.Error, (String?)null));
 
-        await dataContext.SaveChangesAsync();
+        if (affectedRows == 0)
+        {
+            throw new($"Cannot find download with ID {downloadId}");
+        }
     }
 
     private static Boolean IsDuplicateDownloadViolation(DbUpdateException exception)
