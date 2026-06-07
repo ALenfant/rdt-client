@@ -204,73 +204,42 @@ public class DownloadData(DataContext dataContext, ILogger<DownloadData>? logger
 
     public async Task UpdateCompleted(Guid downloadId, DateTimeOffset? dateTime)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.Completed = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        // ⚡ Bolt: ExecuteUpdateAsync prevents entity tracking overhead and saves a database round-trip
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Completed, dateTime));
     }
 
     public async Task UpdateError(Guid downloadId, String? error)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.Error = error;
-
-        await dataContext.SaveChangesAsync();
+        // ⚡ Bolt: ExecuteUpdateAsync prevents entity tracking overhead and saves a database round-trip
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.Error, error));
     }
 
     public async Task UpdateRetryCount(Guid downloadId, Int32 retryCount)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.RetryCount = retryCount;
-
-        await dataContext.SaveChangesAsync();
+        // ⚡ Bolt: ExecuteUpdateAsync prevents entity tracking overhead and saves a database round-trip
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.RetryCount, retryCount));
     }
 
     public async Task UpdateRemoteId(Guid downloadId, String remoteId)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId);
-
-        if (dbDownload == null)
-        {
-            return;
-        }
-
-        dbDownload.RemoteId = remoteId;
-
-        await dataContext.SaveChangesAsync();
+        // ⚡ Bolt: ExecuteUpdateAsync prevents entity tracking overhead and saves a database round-trip
+        await dataContext.Downloads
+                         .Where(m => m.DownloadId == downloadId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(b => b.RemoteId, remoteId));
     }
 
     public async Task DeleteForTorrent(Guid torrentId)
     {
-        var downloads = await dataContext.Downloads
-                                         .Where(m => m.TorrentId == torrentId)
-                                         .ToListAsync();
-
-        dataContext.Downloads.RemoveRange(downloads);
-
-        await dataContext.SaveChangesAsync();
+        // ⚡ Bolt: ExecuteDeleteAsync prevents loading entities into memory before deletion
+        await dataContext.Downloads
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteDeleteAsync();
     }
 
     public async Task Reset(Guid downloadId)
