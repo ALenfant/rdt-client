@@ -264,34 +264,35 @@ public class DownloadData(DataContext dataContext, ILogger<DownloadData>? logger
 
     public async Task DeleteForTorrent(Guid torrentId)
     {
-        var downloads = await dataContext.Downloads
-                                         .Where(m => m.TorrentId == torrentId)
-                                         .ToListAsync();
-
-        dataContext.Downloads.RemoveRange(downloads);
-
-        await dataContext.SaveChangesAsync();
+        // ⚡ Bolt: Use ExecuteDeleteAsync to avoid fetching the entire collection into memory and reduce DB round-trips
+        await dataContext.Downloads
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteDeleteAsync();
     }
 
     public async Task Reset(Guid downloadId)
     {
-        var dbDownload = await dataContext.Downloads
-                                          .FirstOrDefaultAsync(m => m.DownloadId == downloadId)
-                         ?? throw new($"Cannot find download with ID {downloadId}");
+        // ⚡ Bolt: Use ExecuteUpdateAsync to avoid fetching the entire entity into memory
+        var rowsAffected = await dataContext.Downloads
+            .Where(m => m.DownloadId == downloadId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.RetryCount, 0)
+                .SetProperty(b => b.Link, (String?)null)
+                .SetProperty(b => b.Added, DateTimeOffset.UtcNow)
+                .SetProperty(b => b.DownloadQueued, DateTimeOffset.UtcNow)
+                .SetProperty(b => b.DownloadStarted, (DateTimeOffset?)null)
+                .SetProperty(b => b.DownloadFinished, (DateTimeOffset?)null)
+                .SetProperty(b => b.UnpackingQueued, (DateTimeOffset?)null)
+                .SetProperty(b => b.UnpackingStarted, (DateTimeOffset?)null)
+                .SetProperty(b => b.UnpackingFinished, (DateTimeOffset?)null)
+                .SetProperty(b => b.Completed, (DateTimeOffset?)null)
+                .SetProperty(b => b.Error, (String?)null)
+            );
 
-        dbDownload.RetryCount = 0;
-        dbDownload.Link = null;
-        dbDownload.Added = DateTimeOffset.UtcNow;
-        dbDownload.DownloadQueued = DateTimeOffset.UtcNow;
-        dbDownload.DownloadStarted = null;
-        dbDownload.DownloadFinished = null;
-        dbDownload.UnpackingQueued = null;
-        dbDownload.UnpackingStarted = null;
-        dbDownload.UnpackingFinished = null;
-        dbDownload.Completed = null;
-        dbDownload.Error = null;
-
-        await dataContext.SaveChangesAsync();
+        if (rowsAffected == 0)
+        {
+            throw new($"Cannot find download with ID {downloadId}");
+        }
     }
 
     private static Boolean IsDuplicateDownloadViolation(DbUpdateException exception)

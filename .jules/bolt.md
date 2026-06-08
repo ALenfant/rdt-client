@@ -1,0 +1,3 @@
+## 2024-06-08 - EF Core Update and Delete Optimizations
+**Learning:** Entity Framework Core (10+) provides `ExecuteUpdateAsync` and `ExecuteDeleteAsync` which execute directly on the database. Using these instead of the typical `FirstOrDefaultAsync` -> modify properties -> `SaveChangesAsync` pattern (or `RemoveRange`) prevents unnecessary tracking overhead and fetching entire entities into memory, significantly reducing DB round-trips for batch updates and deletes.
+**Action:** When performing targeted updates (like resetting fields) or deleting sets of entities by an ID (like a foreign key), always evaluate using `ExecuteUpdateAsync` or `ExecuteDeleteAsync` to skip change tracking overhead.
