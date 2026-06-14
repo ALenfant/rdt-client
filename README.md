@@ -156,6 +156,7 @@ Prerequisites on the Synology:
 
 - Install and start the **Download Station** package.
 - Use a DSM account that has **both Download Station and File Station permission** (File Station is required so rdt-client can create the per-download destination folder — Download Station will not create it itself). Disable 2-step verification on this account (the API login is username/password only), or use a dedicated service account.
+- In Download Station → **Settings → General**, make sure a **Default destination** is set. A freshly installed Download Station has none, and every task stays stuck in "Waiting" until one is configured.
 
 It has the following options:
 
