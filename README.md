@@ -150,14 +150,27 @@ Suggested configuration:
 
 #### Synology Download Station
 
-The Synology Download Station downloader uses an external Download Station server. You will need to set this up yourself.
+The Synology Download Station downloader hands each file to your NAS's Download Station, which downloads it and writes it to disk. The bytes never pass through rdt-client, so its memory stays flat regardless of file size.
+
+Prerequisites on the Synology:
+
+- Install and start the **Download Station** package.
+- Use a DSM account that has **both Download Station and File Station permission** (File Station is required so rdt-client can create the per-download destination folder — Download Station will not create it itself). Disable 2-step verification on this account (the API login is username/password only), or use a dedicated service account.
 
 It has the following options:
 
-- Url: The URL to the Synology DownloadStation. A common URL is `http://127.0.0.1:5000`
+- Url: The URL to the Synology DownloadStation. A common URL is `http://127.0.0.1:5000`. From inside a Docker container `127.0.0.1` is the container itself — use the NAS's LAN IP (e.g. `http://192.168.1.50:5000`) and the DSM web port (HTTP `5000` by default).
 - Username: The username to use when connecting to the Synology DownloadStation.
 - Password: The password to use when connecting to the Synology DownloadStation.
-- Download Path: The root path to download the file on the Synology DownloadStation host. If left empty, the default path configured on your Download Station server will be used.
+- Download Path: The destination on the Synology, **relative to a shared folder** (e.g. `Media/Downloads/Torrents`) — **not** an absolute path like `/volume1/Media/Downloads/Torrents` (Download Station would treat `volume1` as a share name and fail with "Destination does not exist"). If left empty, the default Download Station destination is used.
+
+**Path mapping (important).** Download Station writes the file on the NAS filesystem, but rdt-client unpacks it and reports it to Sonarr/Radarr at its own container path. Three paths must resolve to the same physical folder or downloads complete but imports silently fail:
+
+- **Download Path** (this setting, NAS share-relative) e.g. `Media/Downloads/Torrents` → physically `/volume1/Media/Downloads/Torrents`.
+- **Download path** (the general rdt-client setting, the container path) e.g. `/data/downloads`, with the container bind-mounted `-v /volume1/Media/Downloads/Torrents:/data/downloads`.
+- **Mapped Path** — whatever Sonarr/Radarr see for that same folder.
+
+So a working example: bind-mount `/volume1/Media/Downloads/Torrents` into rdt-client at `/data/downloads`, set the general Download path to `/data/downloads`, and set this Download Path to `Media/Downloads/Torrents`.
 
 ### Troubleshooting
 

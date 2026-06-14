@@ -1,7 +1,9 @@
-﻿using RdtClient.Service.Helpers;
+using System.IO.Abstractions;
+using RdtClient.Service.Helpers;
 using Serilog;
 using Synology.Api.Client;
 using Synology.Api.Client.Apis.DownloadStation.Task.Models;
+using Synology.Api.Client.Exceptions;
 
 namespace RdtClient.Service.Services.Downloaders;
 
@@ -16,7 +18,13 @@ internal class DelayProvider : IDelayProvider
 public class DownloadStationDownloader : IDownloader
 {
     private const Int32 RetryCount = 5;
+
+    // Synology FileStation error codes that mean the caller lacks permission to create the folder.
+    private const Int32 ErrorPermissionDenied = 403;
+    private const Int32 ErrorOperationNotPermitted = 407;
+
     private readonly IDelayProvider _delayProvider;
+    private readonly IFileSystem _fileSystem;
     private readonly String _filePath;
 
     private readonly ILogger _logger;
@@ -33,10 +41,11 @@ public class DownloadStationDownloader : IDownloader
                                      String filePath,
                                      String downloadPath,
                                      ISynologyClient synologyClient,
-                                     IDelayProvider? delayProvider = null)
+                                     IDelayProvider? delayProvider = null,
+                                     IFileSystem? fileSystem = null)
     {
         _logger = Log.ForContext<DownloadStationDownloader>();
-        _logger.Debug($"Instantiated new DownloadStation Downloader for URI {uri} to filePath {filePath} and downloadPath {downloadPath} and GID {gid}");
+        _logger.Debug($"Instantiated new DownloadStation Downloader for URI {uri} to filePath {filePath} (remote {remotePath}) and downloadPath {downloadPath} and GID {gid}");
 
         _gid = gid;
         _filePath = filePath;
@@ -44,6 +53,7 @@ public class DownloadStationDownloader : IDownloader
         _remotePath = remotePath;
         _synologyClient = synologyClient;
         _delayProvider = delayProvider ?? new DelayProvider();
+        _fileSystem = fileSystem ?? new FileSystem();
     }
 
     public event EventHandler<DownloadCompleteEventArgs>? DownloadComplete;
@@ -51,10 +61,18 @@ public class DownloadStationDownloader : IDownloader
 
     public async Task Cancel()
     {
-        if (_gid != null)
-        {
-            _logger.Debug($"Remove download {_uri} {_gid} from Synology DownloadStation");
+        // Resolve the gid from the task list in case a task was created but its id was never persisted (orphan cleanup).
+        _gid ??= await GetGidFromUri();
 
+        if (_gid == null)
+        {
+            return;
+        }
+
+        _logger.Debug($"Remove download {_uri} {_gid} from Synology DownloadStation");
+
+        try
+        {
             await _synologyClient.DownloadStationApi()
                                  .TaskEndpoint()
                                  .DeleteAsync(new()
@@ -65,6 +83,11 @@ public class DownloadStationDownloader : IDownloader
                                      ],
                                      ForceComplete = false
                                  });
+        }
+        catch (Exception ex)
+        {
+            // The Synology DELETE response can itself fail to deserialize (upstream #792); don't let cleanup throw.
+            _logger.Debug($"Failed to remove DownloadStation task {_gid}: {ex.Message}");
         }
     }
 
@@ -91,7 +114,7 @@ public class DownloadStationDownloader : IDownloader
 
         var retryCount = 0;
 
-        while (retryCount < 5)
+        while (retryCount < RetryCount)
         {
             _gid = await GetGidFromUri();
 
@@ -104,6 +127,10 @@ public class DownloadStationDownloader : IDownloader
 
             try
             {
+                // DownloadStation will not create the destination folder for a direct-file task, so create it first.
+                // `path` is the share-relative destination folder with a leading slash, e.g. /Media/Downloads/Torrents/<name>.
+                await EnsureRemoteFolderExists(path);
+
                 var createResult = await _synologyClient
                                          .DownloadStationApi()
                                          .TaskEndpoint()
@@ -112,6 +139,7 @@ public class DownloadStationDownloader : IDownloader
                 _gid = createResult.TaskId?.FirstOrDefault();
                 _logger.Debug($"Added download to DownloadStation, received ID {_gid}");
 
+                // Only fall back to a list lookup when create returned no id; GetGidFromUri is guarded so it can't erase a known id.
                 _gid ??= await GetGidFromUri();
 
                 if (_gid != null)
@@ -122,7 +150,7 @@ public class DownloadStationDownloader : IDownloader
                 }
 
                 retryCount++;
-                _logger.Error($"Task not found in DownloadStation after creat Sucess. Retrying {retryCount}/{RetryCount}");
+                _logger.Error($"Task not found in DownloadStation after a successful create. Retrying {retryCount}/{RetryCount}");
                 await _delayProvider.Delay(retryCount * 1000);
             }
             catch (Exception e)
@@ -140,9 +168,18 @@ public class DownloadStationDownloader : IDownloader
     {
         _logger.Debug($"Pausing download {_uri} {_gid}");
 
-        if (_gid != null)
+        if (_gid == null)
+        {
+            return;
+        }
+
+        try
         {
             await _synologyClient.DownloadStationApi().TaskEndpoint().PauseAsync(_gid);
+        }
+        catch (Exception ex)
+        {
+            _logger.Debug($"Failed to pause DownloadStation task {_gid}: {ex.Message}");
         }
     }
 
@@ -150,9 +187,18 @@ public class DownloadStationDownloader : IDownloader
     {
         _logger.Debug($"Resuming download {_uri} {_gid}");
 
-        if (_gid != null)
+        if (_gid == null)
+        {
+            return;
+        }
+
+        try
         {
             await _synologyClient.DownloadStationApi().TaskEndpoint().ResumeAsync(_gid);
+        }
+        catch (Exception ex)
+        {
+            _logger.Debug($"Failed to resume DownloadStation task {_gid}: {ex.Message}");
         }
     }
 
@@ -169,7 +215,16 @@ public class DownloadStationDownloader : IDownloader
         }
 
         var synologyClient = new SynologyClient(Settings.Get.DownloadClient.DownloadStationUrl);
-        await synologyClient.LoginAsync(Settings.Get.DownloadClient.DownloadStationUsername, Settings.Get.DownloadClient.DownloadStationPassword);
+
+        try
+        {
+            await synologyClient.LoginAsync(Settings.Get.DownloadClient.DownloadStationUsername, Settings.Get.DownloadClient.DownloadStationPassword);
+        }
+        catch (Exception ex)
+        {
+            throw new($"DownloadStation login failed for user '{Settings.Get.DownloadClient.DownloadStationUsername}': {ex.Message}. " +
+                      $"If 2-step verification is enabled on this Synology account, use a dedicated service account without 2FA.");
+        }
 
         String? remotePath = null;
         String? rootPath;
@@ -199,11 +254,50 @@ public class DownloadStationDownloader : IDownloader
         return new(gid, uri, remotePath, filePath, downloadPath, synologyClient);
     }
 
+    /// <summary>
+    ///     Ensures the destination folder exists on the Synology before a task is created. DownloadStation does not create
+    ///     the destination for a direct-file download task, so a missing folder yields "Destination does not exist".
+    /// </summary>
+    private async Task EnsureRemoteFolderExists(String folderPath)
+    {
+        try
+        {
+            await _synologyClient.FileStationApi()
+                                 .CreateFolderEndpoint()
+                                 .CreateAsync([folderPath], true);
+
+            _logger.Debug($"Ensured DownloadStation destination folder exists: {folderPath}");
+        }
+        catch (SynologyApiException ex) when (ex.ErrorCode is ErrorPermissionDenied or ErrorOperationNotPermitted)
+        {
+            throw new($"DownloadStation could not create the destination folder '{folderPath}'. " +
+                      $"The Synology account needs File Station permission with write access to that location " +
+                      $"(error {ex.ErrorCode}: {ex.ErrorDescription}).");
+        }
+        catch (SynologyApiException ex)
+        {
+            // Any other FileStation error (e.g. the folder already exists) is non-fatal: the task create below
+            // is the source of truth, and will surface "Destination does not exist" if the folder is genuinely missing.
+            _logger.Debug($"CreateFolder for '{folderPath}' returned {ex.ErrorCode} ({ex.ErrorDescription}); continuing (folder likely already exists).");
+        }
+    }
+
     private async Task<String?> GetGidFromUri()
     {
-        var tasks = await _synologyClient.DownloadStationApi().TaskEndpoint().ListAsync();
+        try
+        {
+            var tasks = await _synologyClient.DownloadStationApi().TaskEndpoint().ListAsync();
 
-        return tasks.Task?.FirstOrDefault(t => t.Additional?.Detail?.Uri == _uri)?.Id;
+            return tasks.Task?.FirstOrDefault(t => t.Additional?.Detail?.Uri == _uri)?.Id;
+        }
+        catch (Exception ex)
+        {
+            // The task-list response can fail to deserialize when a task carries a non-string error_detail (upstream #723);
+            // treat that as "not found" instead of aborting the whole download.
+            _logger.Debug($"Failed to list DownloadStation tasks for {_uri}: {ex.Message}");
+
+            return null;
+        }
     }
 
     public async Task Update()
@@ -232,13 +326,26 @@ public class DownloadStationDownloader : IDownloader
             return;
         }
 
-        if (task.Status == DownloadStationTaskStatus.Finished)
+        // DownloadStation reports failures via status_extra.error_detail (the status enum has no error member),
+        // and stalls awaiting input on CaptchaNeeded. Surface both instead of polling progress forever.
+        if (!String.IsNullOrWhiteSpace(task.StatusExtra?.ErrorDetail) || task.Status == DownloadStationTaskStatus.CaptchaNeeded)
         {
+            var detail = !String.IsNullOrWhiteSpace(task.StatusExtra?.ErrorDetail) ? task.StatusExtra!.ErrorDetail : task.Status.ToString();
+
+            await Cancel();
+
             DownloadComplete?.Invoke(this,
                                      new()
                                      {
-                                         Error = null
+                                         Error = $"DownloadStation error: {detail}"
                                      });
+
+            return;
+        }
+
+        if (IsComplete(task))
+        {
+            await CompleteWhenFileExists();
 
             return;
         }
@@ -249,6 +356,51 @@ public class DownloadStationDownloader : IDownloader
                                      BytesDone = task.Additional?.Transfer?.SizeDownloaded ?? 0,
                                      BytesTotal = task.Size,
                                      Speed = task.Additional?.Transfer?.SpeedDownload ?? 0
+                                 });
+    }
+
+    /// <summary>
+    ///     A DownloadStation task is done downloading in several terminal states (it is not always <c>Finished</c> — a
+    ///     completed torrent settles into <c>Seeding</c>/<c>Downloaded</c>). Also treat fully-transferred tasks as complete.
+    /// </summary>
+    private static Boolean IsComplete(DownloadStationTask task)
+    {
+        if (task.Status is DownloadStationTaskStatus.Finished
+                        or DownloadStationTaskStatus.Downloaded
+                        or DownloadStationTaskStatus.Seeding
+                        or DownloadStationTaskStatus.PreSeeding)
+        {
+            return true;
+        }
+
+        return task.Size > 0 && (task.Additional?.Transfer?.SizeDownloaded ?? 0) >= task.Size;
+    }
+
+    /// <summary>
+    ///     DownloadStation finishing only means the file is on the Synology; verify it is visible at the container path
+    ///     (the bind-mounted location rdt-client unpacks/imports from) before signalling success, mirroring the Aria2c
+    ///     downloader. A missing file means the path mapping is wrong, which is otherwise a silent import failure.
+    /// </summary>
+    private async Task CompleteWhenFileExists()
+    {
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            if (_fileSystem.File.Exists(_filePath))
+            {
+                DownloadComplete?.Invoke(this, new());
+
+                return;
+            }
+
+            await _delayProvider.Delay(attempt * 1000);
+        }
+
+        DownloadComplete?.Invoke(this,
+                                 new()
+                                 {
+                                     Error = $"DownloadStation reported the download finished, but no file was found at {_filePath} " +
+                                             $"(DownloadStation saved to {_remotePath}). Check that the Download path, the DownloadStation Download Path, " +
+                                             $"and the container bind mount all point at the same folder."
                                  });
     }
 
@@ -263,8 +415,11 @@ public class DownloadStationDownloader : IDownloader
 
             return await _synologyClient.DownloadStationApi().TaskEndpoint().GetInfoAsync(_gid);
         }
-        catch
+        catch (Exception ex)
         {
+            // GetInfo can throw on an empty/absent task or on the #723 error_detail deserialization; treat as "no task".
+            _logger.Debug($"Failed to get DownloadStation task {_gid}: {ex.Message}");
+
             return null;
         }
     }
