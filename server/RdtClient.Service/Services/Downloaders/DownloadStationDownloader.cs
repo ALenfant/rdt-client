@@ -296,13 +296,18 @@ public class DownloadStationDownloader : IDownloader
             }
         }
 
+        // Re-acquire reads the credentials fresh from settings (not the values captured above) so that editing and
+        // saving the DownloadStation URL/credentials takes effect live: an in-flight download that has to re-authenticate
+        // converges on the current settings instead of flipping the shared session back to stale credentials.
         return new(gid,
                    uri,
                    remotePath,
                    filePath,
                    downloadPath,
                    synologyClient,
-                   reacquireClient: () => SynologyClientProvider.GetClientAsync(url, username, password));
+                   reacquireClient: () => SynologyClientProvider.GetClientAsync(Settings.Get.DownloadClient.DownloadStationUrl!,
+                                                                                Settings.Get.DownloadClient.DownloadStationUsername!,
+                                                                                Settings.Get.DownloadClient.DownloadStationPassword!));
     }
 
     /// <summary>
