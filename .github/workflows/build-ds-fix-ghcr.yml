@@ -1,0 +1,38 @@
+name: Build DS-fix image (GHCR)
+
+# Builds the fork's image natively on an amd64 runner (no emulation), the same
+# way the official release workflow does, and pushes it to GHCR for the NAS to pull.
+on:
+  push:
+    branches:
+      - fix/download-station-destination-and-completion
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # native amd64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push (amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/alenfant/rdtclient:ds-fix
