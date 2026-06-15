@@ -19,10 +19,6 @@ public class DownloadStationDownloader : IDownloader
 {
     private const Int32 RetryCount = 5;
 
-    // Synology FileStation error codes that mean the caller lacks permission to create the folder.
-    private const Int32 ErrorPermissionDenied = 403;
-    private const Int32 ErrorOperationNotPermitted = 407;
-
     private readonly IDelayProvider _delayProvider;
     private readonly IFileSystem _fileSystem;
     private readonly String _filePath;
@@ -268,17 +264,15 @@ public class DownloadStationDownloader : IDownloader
 
             _logger.Debug($"Ensured DownloadStation destination folder exists: {folderPath}");
         }
-        catch (SynologyApiException ex) when (ex.ErrorCode is ErrorPermissionDenied or ErrorOperationNotPermitted)
-        {
-            throw new($"DownloadStation could not create the destination folder '{folderPath}'. " +
-                      $"The Synology account needs File Station permission with write access to that location " +
-                      $"(error {ex.ErrorCode}: {ex.ErrorDescription}).");
-        }
         catch (SynologyApiException ex)
         {
-            // Any other FileStation error (e.g. the folder already exists) is non-fatal: the task create below
-            // is the source of truth, and will surface "Destination does not exist" if the folder is genuinely missing.
-            _logger.Debug($"CreateFolder for '{folderPath}' returned {ex.ErrorCode} ({ex.ErrorDescription}); continuing (folder likely already exists).");
+            // With force_parent (createParentFolders), creating a folder that already exists returns success, so an
+            // exception here means the folder could NOT be created — most commonly because the Synology account lacks
+            // File Station permission or write access to the destination. Surface it clearly: the task create below
+            // will then fail with "Destination does not exist", and this warning explains why.
+            _logger.Warning($"Could not create the DownloadStation destination folder '{folderPath}' " +
+                            $"(File Station error {ex.ErrorCode}: {ex.ErrorDescription}). The Synology account must have " +
+                            $"File Station permission with read/write access to that path.");
         }
     }
 
