@@ -152,6 +152,13 @@ Suggested configuration:
 
 The Synology Download Station downloader hands each file to your NAS's Download Station, which downloads it and writes it to disk. The bytes never pass through rdt-client, so its memory stays flat regardless of file size.
 
+To set it up:
+
+1. Complete the Synology prerequisites below.
+2. In rdt-client, go to **Settings** and set **Download client** to **Synology Download Station**.
+3. Fill in the Download Station options below (URL, username, password, download path).
+4. Make sure the path mapping lines up (see below), then **Save**.
+
 Prerequisites on the Synology:
 
 - Install and start the **Download Station** package.
