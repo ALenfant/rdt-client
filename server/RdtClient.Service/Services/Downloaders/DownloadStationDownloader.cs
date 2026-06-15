@@ -2,6 +2,7 @@ using System.IO.Abstractions;
 using RdtClient.Service.Helpers;
 using Serilog;
 using Synology.Api.Client;
+using Synology.Api.Client.Apis.DownloadStation.Info.Models;
 using Synology.Api.Client.Apis.DownloadStation.Task.Models;
 using Synology.Api.Client.Exceptions;
 
@@ -228,6 +229,10 @@ public class DownloadStationDownloader : IDownloader
         if (!String.IsNullOrWhiteSpace(Settings.Get.DownloadClient.DownloadStationDownloadPath))
         {
             rootPath = Settings.Get.DownloadClient.DownloadStationDownloadPath;
+
+            // DownloadStation resolves a per-account default destination and leaves every task in "Waiting" if the
+            // account has none. Make sure this account has one (set to the configured root) so downloads can start.
+            await EnsureDefaultDestination(synologyClient, rootPath);
         }
         else
         {
@@ -248,6 +253,49 @@ public class DownloadStationDownloader : IDownloader
         }
 
         return new(gid, uri, remotePath, filePath, downloadPath, synologyClient);
+    }
+
+    /// <summary>
+    ///     DownloadStation resolves a per-account "default destination"; without one it leaves every task in "Waiting"
+    ///     (DSM logs "Failed to get default download destination of user"). Set it for this account when it has none,
+    ///     best-effort and preserving the other server settings, so downloads start without a manual setup step.
+    /// </summary>
+    private static async Task EnsureDefaultDestination(ISynologyClient synologyClient, String destination)
+    {
+        var logger = Log.ForContext<DownloadStationDownloader>();
+
+        try
+        {
+            var config = await synologyClient.DownloadStationApi().InfoEndpoint().GetConfigAsync();
+
+            if (!String.IsNullOrWhiteSpace(config.DefaultDestination))
+            {
+                return;
+            }
+
+            // Re-send the existing config unchanged except for the default destination, so nothing else is reset.
+            var updated = new DownloadStationServerConfig(config.BtMaxDownloadSpeed,
+                                                          config.BtMaxUploadSpeed,
+                                                          config.EmulEnable,
+                                                          config.EmulMaxDownloadSpeed,
+                                                          config.EmulMaxUploadSpeed,
+                                                          config.FtpMaxDownloadSpeed,
+                                                          config.HttpMaxDownloadSpeed,
+                                                          config.NzbMaxDownloadSpeed,
+                                                          config.UnzipServiceEnable,
+                                                          destination,
+                                                          config.EmulDefaultDestination);
+
+            await synologyClient.DownloadStationApi().InfoEndpoint().SetServerConfigAsync(updated);
+
+            logger.Information($"Set the DownloadStation default destination to '{destination}' for this account (it had none).");
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"Could not set the DownloadStation default destination automatically ({ex.Message}). " +
+                           $"If downloads stay in 'Waiting', sign into Download Station as this account and set a Default destination " +
+                           $"under Settings -> BT/HTTP/FTP/NZB -> Location.");
+        }
     }
 
     /// <summary>

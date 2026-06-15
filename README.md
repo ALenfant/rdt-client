@@ -163,7 +163,7 @@ Prerequisites on the Synology:
 
 - Install and start the **Download Station** package.
 - Use a DSM account that has **both Download Station and File Station permission** (File Station is required so rdt-client can create the per-download destination folder — Download Station will not create it itself). Disable 2-step verification on this account (the API login is username/password only), or use a dedicated service account.
-- Set a **Default destination** for **the account rdt-client signs in with** — this is **per-user**, not global. Sign into Download Station *as that account* and set it under **Settings → BT/HTTP/FTP/NZB → Location → Default destination**. A default set for your admin account does **not** apply to a dedicated download account, and without one every task that account creates stays stuck in **"Waiting"** (DSM logs `Failed to get default download destination of user [<account>]`).
+- Download Station's **Default destination** is **per-user**. When you set a Download Path (below), rdt-client automatically sets this account's default destination to match on connect, so you normally don't need to do anything. If that fails (e.g. the account isn't allowed to change Download Station settings), sign into Download Station *as that account* and set it under **Settings → BT/HTTP/FTP/NZB → Location → Default destination** — otherwise every task that account creates stays stuck in **"Waiting"** (DSM logs `Failed to get default download destination of user [<account>]`). A default set for your admin account does **not** apply to a dedicated download account.
 
 It has the following options:
 
