@@ -105,7 +105,13 @@ public class DownloadStationDownloader : IDownloader
 
             if (task != null)
             {
-                throw new($"The download link {_uri} has already been added to DownloadStation");
+                // A task for this download already exists in DownloadStation; adopt it instead of throwing.
+                // Throwing here permanently bricks every retry that reuses the gid: the caller Cancel()s first,
+                // but the DownloadStation delete response fails to deserialize (upstream #792) so the task is not
+                // actually removed, and the next Download() then errors with "already added" forever.
+                _logger.Debug($"Download with ID {_gid} already exists in DownloadStation; reusing it");
+
+                return _gid;
             }
         }
 
