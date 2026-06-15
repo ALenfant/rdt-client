@@ -170,19 +170,24 @@ It has the following options:
 - Url: The URL to the Synology DownloadStation. A common URL is `http://127.0.0.1:5000`. From inside a Docker container `127.0.0.1` is the container itself — use the NAS's LAN IP (e.g. `http://192.168.1.50:5000`) and the DSM web port (HTTP `5000` by default).
 - Username: The username to use when connecting to the Synology DownloadStation.
 - Password: The password to use when connecting to the Synology DownloadStation.
-- Download Path: The destination on the Synology, **relative to a shared folder** (e.g. `Media/Downloads/Torrents`) — **not** an absolute path like `/volume1/Media/Downloads/Torrents` (Download Station would treat `volume1` as a share name and fail with "Destination does not exist"). If left empty, the default Download Station destination is used.
+- Download Path: The destination on the Synology, **relative to a shared folder** (e.g. `Media/Downloads/Torrents`) — **not** an absolute path like `/volume1/Media/Downloads/Torrents` (Download Station would treat `volume1` as a share name and fail with "Destination does not exist"). **This must resolve to the exact same physical folder as the general Download path** — see Path mapping below. If left empty, the default Download Station destination is used.
 
-**Path mapping (important).** Download Station writes the file on the NAS filesystem, but rdt-client unpacks it and reports it to Sonarr/Radarr at its own container path. The single most common failure is that **the NAS folder Download Station downloads into is not the same physical folder rdt-client looks in** — the download finishes but the import never happens. Three paths must resolve to the same physical folder:
+**Path mapping (important).** Download Station runs on the NAS; rdt-client runs in its container. They see the same folder through different mounts, so:
 
-- **Download Path** (this setting, NAS share-relative) e.g. `Media/Downloads/Torrents` → physically `/volume1/Media/Downloads/Torrents`.
-- **Download path** (the general rdt-client setting, the container path) e.g. `/data/downloads`, with the container bind-mounted so that exact container path *is* the share folder above: `-v /volume1/Media/Downloads/Torrents:/data/downloads`.
-- **Mapped Path** — whatever Sonarr/Radarr see for that same folder.
+> **The Synology *Download Path* (above) and rdt-client's general *Download path* must resolve to the exact same physical folder on the NAS.**
 
-The bind mount must target the **full** general Download path, including any subfolder. If your general Download path is `/data/downloads/Completed`, then `/data/downloads/Completed` (not `/data/downloads`) must be the share folder — e.g. `-v /volume1/Media/Downloads/Torrents:/data/downloads/Completed`.
+This is the single most common failure. If the two don't line up, Download Station saves the file somewhere rdt-client can't see, the download "finishes", and the import never happens. The two settings look different only because each names that one folder in a different dialect, with the **container bind mount as the bridge** between them:
 
-So a working example: bind-mount `/volume1/Media/Downloads/Torrents` into rdt-client at `/data/downloads`, set the general Download path to `/data/downloads`, and set this Download Path to `Media/Downloads/Torrents`.
+- **Download Path** (this setting) is NAS share-relative: `Media/Downloads/Torrents` → physically `/volume1/Media/Downloads/Torrents`.
+- **Download path** (the general rdt-client setting) is the container path: `/data/downloads`, bind-mounted so that exact path *is* the share folder above — `-v /volume1/Media/Downloads/Torrents:/data/downloads`.
 
-If you see `DownloadStation reported the download finished, but no file was found at <container path> (DownloadStation saved to <NAS path>)` in the log, these two paths are not the same folder — fix the bind mount (or the two Download Path settings) so they coincide.
+The match must cover the **full** general Download path, including any subfolder. If your general Download path is `/data/downloads/Completed`, then *that* (not `/data/downloads`) is what must equal the NAS folder — so either bind-mount the share there, or set this Download Path to the matching subfolder (`Media/Downloads/Torrents/Completed`). Note that, unlike the in-process Bezzad downloader, Download Station writes the file straight into this folder *as it downloads*, so a folder named `Completed` will briefly hold in-progress files — that is normal with Download Station.
+
+A working example: bind-mount `/volume1/Media/Downloads/Torrents` to `/data/downloads`, set the general Download path to `/data/downloads`, and set this Download Path to `Media/Downloads/Torrents` — all three name the same folder.
+
+Separately, the **Mapped Path** must point at that same folder as Sonarr/Radarr see it (through *their* mount), or the download completes but never imports.
+
+If you see `DownloadStation reported the download finished, but no file was found at <container path> (DownloadStation saved to <NAS path>)` in the log, the two Download paths are not the same folder — line them up.
 
 ### Troubleshooting
 
