@@ -9,3 +9,6 @@ data
 Dockerfile.dev
 test.bat
 .DS_Store
+
+# Local vDSM E2E scratch (VM storage, Playwright tooling, screenshots)
+.e2e/
