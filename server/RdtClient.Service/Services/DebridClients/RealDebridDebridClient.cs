@@ -376,12 +376,12 @@ public class RealDebridDebridClient(ILogger<RealDebridDebridClient> logger, IHtt
             Status = torrent.Status,
             Added = ChangeTimeZone(torrent.Added)!.Value,
             Files = (torrent.Files ?? []).Select(m => new DebridClientFile
-                                         {
-                                             Path = m.Path,
-                                             Bytes = m.Bytes,
-                                             Id = m.Id,
-                                             Selected = m.Selected
-                                         })
+            {
+                Path = m.Path,
+                Bytes = m.Bytes,
+                Id = m.Id,
+                Selected = m.Selected
+            })
                                          .ToList(),
             Links = torrent.Links,
             Ended = ChangeTimeZone(torrent.Ended),

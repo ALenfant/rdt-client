@@ -128,10 +128,10 @@ public class TorBoxDebridClient(
         if (availability.Data != null && availability.Data.Count > 0)
         {
             return (availability.Data[0]?.Files ?? []).Select(file => new DebridClientAvailableFile
-                                                      {
-                                                          Filename = file.Name,
-                                                          Filesize = file.Size
-                                                      })
+            {
+                Filename = file.Name,
+                Filesize = file.Size
+            })
                                                       .ToList();
         }
 
@@ -140,10 +140,10 @@ public class TorBoxDebridClient(
         if (usenetAvailability.Data != null && usenetAvailability.Data.Count > 0)
         {
             return (usenetAvailability.Data[0]?.Files ?? []).Select(file => new DebridClientAvailableFile
-                                                            {
-                                                                Filename = file.Name,
-                                                                Filesize = file.Size
-                                                            })
+            {
+                Filename = file.Name,
+                Filesize = file.Size
+            })
                                                             .ToList();
         }
 
@@ -363,10 +363,10 @@ public class TorBoxDebridClient(
         logger.LogDebug("Downloading files from TorBox individually.");
 
         return downloadableFiles.Select(file => new DownloadInfo
-                                {
-                                    RestrictedLink = $"https://torbox.app/fakedl/{id}/{file.Id}",
-                                    FileName = Path.GetFileName(file.Path)
-                                })
+        {
+            RestrictedLink = $"https://torbox.app/fakedl/{id}/{file.Id}",
+            FileName = Path.GetFileName(file.Path)
+        })
                                 .ToList();
     }
 
@@ -473,12 +473,12 @@ public class TorBoxDebridClient(
             Type = DownloadType.Torrent,
             Added = ChangeTimeZone(torrent.CreatedAt)!.Value,
             Files = (torrent.Files ?? []).Select(m => new DebridClientFile
-                                         {
-                                             Path = String.Join("/", m.Name.Split('/').Skip(1)),
-                                             Bytes = m.Size,
-                                             Id = m.Id,
-                                             Selected = true
-                                         })
+            {
+                Path = String.Join("/", m.Name.Split('/').Skip(1)),
+                Bytes = m.Size,
+                Id = m.Id,
+                Selected = true
+            })
                                          .ToList(),
             Links = [],
             Ended = ChangeTimeZone(torrent.UpdatedAt),
@@ -504,12 +504,12 @@ public class TorBoxDebridClient(
             Type = DownloadType.Nzb,
             Added = ChangeTimeZone(usenet.CreatedAt)!.Value,
             Files = (usenet.Files ?? []).Select(m => new DebridClientFile
-                                        {
-                                            Path = String.Join("/", m.Name.Split('/').Skip(1)),
-                                            Bytes = m.Size,
-                                            Id = m.Id,
-                                            Selected = true
-                                        })
+            {
+                Path = String.Join("/", m.Name.Split('/').Skip(1)),
+                Bytes = m.Size,
+                Id = m.Id,
+                Selected = true
+            })
                                         .ToList(),
             Links = [],
             Ended = ChangeTimeZone(usenet.UpdatedAt),

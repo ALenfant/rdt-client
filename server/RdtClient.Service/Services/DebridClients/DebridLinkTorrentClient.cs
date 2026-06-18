@@ -281,13 +281,13 @@ public class DebridLinkClient(ILogger<DebridLinkClient> logger, IHttpClientFacto
             Status = torrent.Status.ToString(),
             Added = DateTimeOffset.FromUnixTimeSeconds(torrent.Created),
             Files = (torrent.Files ?? []).Select((m, i) => new DebridClientFile
-                                         {
-                                             Path = m.Name ?? "",
-                                             Bytes = m.Size,
-                                             Id = i,
-                                             Selected = true,
-                                             DownloadLink = m.DownloadUrl
-                                         })
+            {
+                Path = m.Name ?? "",
+                Bytes = m.Size,
+                Id = i,
+                Selected = true,
+                DownloadLink = m.DownloadUrl
+            })
                                          .ToList(),
             Links = torrent.Files?.Select(m => m.DownloadUrl.ToString()).ToList(),
             Ended = null,
