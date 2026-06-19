@@ -133,30 +133,16 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
 
     public async Task UpdateRdId(Torrent torrent, String rdId)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrent.TorrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.RdId = rdId;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrent.TorrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(m => m.RdId, rdId));
     }
 
     public async Task UpdateHash(Torrent torrent, String hash)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrent.TorrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Hash = hash.ToLower();
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrent.TorrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(m => m.Hash, hash.ToLower()));
     }
 
     public async Task Update(Torrent torrent)
@@ -182,16 +168,9 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
 
     public async Task UpdateCategory(Guid torrentId, String? category)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Category = category;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(m => m.Category, category));
     }
 
     public async Task UpdateComplete(Guid torrentId, String? error, DateTimeOffset? datetime, Boolean retry)
@@ -231,59 +210,31 @@ public class TorrentData(DataContext dataContext, ILogger<TorrentData>? logger =
 
     public async Task UpdateFilesSelected(Guid torrentId, DateTimeOffset datetime)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.FilesSelected = datetime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(m => m.FilesSelected, datetime));
     }
 
     public async Task UpdatePriority(Guid torrentId, Int32? priority)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Priority = priority;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(m => m.Priority, priority));
     }
 
     public async Task UpdateRetry(Guid torrentId, DateTimeOffset? dateTime, Int32 retryCount)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.RetryCount = retryCount;
-        dbTorrent.Retry = dateTime;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(m => m.RetryCount, retryCount)
+                                                   .SetProperty(m => m.Retry, dateTime));
     }
 
     public async Task UpdateError(Guid torrentId, String error)
     {
-        var dbTorrent = await dataContext.Torrents.FirstOrDefaultAsync(m => m.TorrentId == torrentId);
-
-        if (dbTorrent == null)
-        {
-            return;
-        }
-
-        dbTorrent.Error = error;
-
-        await dataContext.SaveChangesAsync();
+        await dataContext.Torrents
+                         .Where(m => m.TorrentId == torrentId)
+                         .ExecuteUpdateAsync(s => s.SetProperty(m => m.Error, error));
     }
 
     public async Task Delete(Guid torrentId)
